@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=10.0" />
+  <title>PICO-8 JavaScript Music Player</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      text-align: center;
+    }
+
+    .container {
+      margin: auto;
+      max-width: 800px;
+      text-align: left;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    p,
+    ul {
+      line-height: 150%;
+    }
+
+    a {
+      color: #00f;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #888;
+    }
+
+    th,
+    td {
+      height: 35px;
+      border: 1px solid #888;
+      padding: 4px 6px;
+    }
+
+    audio {
+      width: 200px;
+      height: 25px;
+    }
+
+    .bad {
+      color: red;
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>PICO-8 JavaScript Music Player</h1>
+    <p>A tiny JavaScript library that generates music from <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a> cartridges.</p>
+    <h2>Features</h2>
+    <ul>
+      <li>Play PICO-8 sound effects and music</li>
+      <li>Player JavaScript a mere 1.5k (1k gzipped)</li>
+    </ul>
+    <h2>Instructions</h2>
+    <p>1. Grab the source here:</p>
+    <ul>
+      <li>Original: <a href="#">...</a></li>
+      <li>Minified: <a href="#">...</a></li>
+    </ul>
+    <p>2. Extract music and sound from a PICO-8 cartridge in .p8 format:</p>
+    <blockquote>
+      <pre>$ node src/convert.js carts/tunes1.p8 > examples/tunes3.js</pre>
+    </blockquote>
+    <p>3. Include the output in your project (using HTML <code>&lt;source&gt;</code>, webpack, etc)</p>
+    <p>4. Include the player in your project</p>
+    <p>5. Play sound:</p>
+    <blockquote>
+      <pre>pico8.sfx(myCartridge, mySfxId);</pre>
+    </blockquote>
+    <p>6. Play music:</p>
+    <blockquote>
+      <pre>pico8.music(myCartridge, mySongId);</pre>
+    </blockquote>
+    <h2>Examples</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Song</th>
+          <th>Length</th>
+          <th>Size</th>
+          <th>Gzip</th>
+          <th>JS</th>
+          <th>Original</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="6"><a href="https://www.lexaloffle.com/bbs/?tid=29008">Pico-8 Tunes Volume 1</a></td>
+        </tr>
+        <tr>
+          <td>1. Demented Mario</td>
+          <td>24.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_1);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_demented_mario.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>2. Pastoral</td>
+          <td>38.4</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_2);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_pastoral.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>3. Sand</td>
+          <td>23.5</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_3);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_sand.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>4. Space</td>
+          <td>32.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_4);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_space.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>5. Ice</td>
+          <td>22.4</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_5);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_ice.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>6. Nostalgia</td>
+          <td>41.6</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_6);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_nostalgia.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>7. Dungeon</td>
+          <td>38.4</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_7);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_dungeon.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>8. Boss</td>
+          <td>13.1</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_8);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_boss.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>9. Evil</td>
+          <td>72.5</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_9);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_evil.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>10. Travel</td>
+          <td>22.4</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_10);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_travel.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>11. Puzzle</td>
+          <td>19.2</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_11);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_puzzle.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>12. Village</td>
+          <td>20.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes1_12);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes1_village.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="6"><a href="https://www.lexaloffle.com/bbs/?pid=62911">Pico-8 Tunes Volume 2</a></td>
+        </tr>
+        <tr>
+          <td>1. Into the Belt</td>
+          <td>26.1</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_2);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_into_the_belt.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td class="bad">2. Need for Speed</td>
+          <td>28.8</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_10);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_need_for_speed.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>3. Like Clockwork</td>
+          <td>12.8</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_4);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_like_clockwork.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>4. Morning Shower</td>
+          <td>32.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_1);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_morning_shower.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>5. Robot Dance</td>
+          <td>36.3</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_5);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_robot_dance.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td class="bad">6. Eyes in the Dark</td>
+          <td>51.2</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_8);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_eyes_in_the_dark.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>7. Flight of Icarus</td>
+          <td>17.6</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_9);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_flight_of_icarus.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td class="bad">8. Fickle Flame</td>
+          <td>21.3</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_7);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_fickle_flame.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td class="bad">9. Autumn Wind</td>
+          <td>32.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_6);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_autumn_wind.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>10. Dimensional Gate</td>
+          <td>27.7</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2_3);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_dimensional_gate.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h2>Known issues</h2>
+    <ul>
+      <li>"Instrument editor" (custom instruments) not implemented. All songs in <span class="bad">red</span> are totally broken.
+      </li>
+      <li>Arpeggio not implemented.</li>
+      <li>Smooth transitions across instruments (When instrument changes, an attack/release envelope is applied. Some
+        instruments appear to be compatible, and the envelope should *not* be applied. You can hear this in
+        "Nostalgia".)</li>
+      <li>Vibrato not quite correct.</li>
+    </ul>
+    <h2>Acknowledgements</h2>
+    <p>This project was made possible by these amazing people:</p>
+    <ul>
+      <li>
+        <a href="https://www.lexaloffle.com/">zep</a> and
+        <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a>
+      </li>
+      <li>
+        <a href="https://github.com/samhocevar">Sam Hocevar</a> and
+        <a href="https://github.com/samhocevar/zepto8">zepto8</a>
+      </li>
+      <li>
+        <a href="https://github.com/KilledByAPixel">Frank Force</a> and
+        <a href="https://github.com/KilledByAPixel/ZzFX">ZzFX</a>
+      </li>
+      <li>
+        <a href="https://github.com/keithclark">Keith Clark</a> and
+        <a href="https://github.com/keithclark/ZzFXM">ZzFXM</a>
+      </li>
+      <li>
+        <a href="https://github.com/nicolas-van">Nicolas Vanhoren</a> and
+        <a href="https://github.com/nicolas-van/sonant-x">Sonant-X</a>
+      </li>
+    </ul>
+  </div>
+  <script src="examples/tunes1.js"></script>
+  <script src="examples/tunes2.js"></script>
+  <script src="dist/player.min.js"></script>
+</body>
+
+</html>

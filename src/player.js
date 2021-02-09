@@ -1,14 +1,24 @@
 
 /**
- * Song data definition.
- * Tuple with expected elements:
- *   0: {number} song length
- *   1: {number} loop time
- *   2: {!Array.<!Array.<number>>} sfx data
- *   3: {!Array.<!Array.<number>>} music data
- * @typedef {!Array.<number|!Array.<!Array.<number>>>}
+ * Sound effects data definition.
+ * @typedef {!Array.<!Array.<number>>}
  */
-const Song = {};
+const SfxData = {};
+
+/**
+ * Sound effects data definition.
+ * @typedef {!Array.<!Array.<number>>}
+ */
+const MusicData = {};
+
+/**
+ * Cartridge data definition.
+ * Tuple with expected elements:
+ *   0: {!SfxData} sfx data
+ *   1: {!MusicData} music data
+ * @typedef {!Array.<!SfxData|!MusicData>}
+ */
+const Cartridge = {};
 
 const FX_NO_EFFECT = 0;
 const FX_SLIDE = 1;
@@ -132,22 +142,18 @@ const oscillators = [
 const getNote = (pitch) => 65.4 * 2 ** (pitch / 12);
 
 /**
- * @param {!Song} song
+ * @param {!SfxData} sfxData
  * @param {!Float32Array} data
  * @param {number} offset
  * @param {number} endOffset
  * @param {number} sfxIndex
  */
-const buildSound = (song, data, offset, endOffset, sfxIndex) => {
-  const sfxData = /** @const {!Array.<!Array.<number>>} */ (song[2]);
+const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   const sfxRow = /** @const {!Array.<number>} */ (sfxData[sfxIndex]);
   const noteLength = sfxRow[0] / BASE_SPEED;
-  // let prevFreq = getNote(24);
-  // let prevVolume = 0;
   let phi = 0;
   let i = 0;
 
-  // for (let i = 0; i < 32; i++) {
   while (offset < endOffset) {
     const prevNote = i == 0 ? -1 : sfxRow[3 + (i - 1) * 4];
     const prevFreq = getNote(prevNote);
@@ -247,20 +253,44 @@ const buildSound = (song, data, offset, endOffset, sfxIndex) => {
 };
 
 /**
- * Builds a song.
- * @param {!Song} song
+ * Builds and plays a song.
+ * @param {!Cartridge} cartridge
+ * @param {number=} startPattern
  * @return {!AudioBufferSourceNode}
  */
-const buildSong = (song) => {
-  const songLength = /** @const {number} */ (song[0]);
-  const sfxData = /** @const {!Array.<!Array.<number>>} */ (song[2]);
-  const musicData = /** @const {!Array.<!Array.<number>>} */ (song[3]);
+const playMusic = (cartridge, startPattern = 0) => {
+  const sfxData = /** @const {!SfxData} */ (cartridge[0]);
+  const musicData = /** @const {!MusicData} */ (cartridge[1]);
+
+  // Find the end pattern
+  // The end pattern is either:
+  //   1) The first pattern after start with the "loop" flag set
+  //   2) Or the last pattern in the cartridge
+  const endPattern = /** @const {number} */ (musicData.findIndex(
+      (row, index) =>
+        // Looping pattern after start
+        (/** @type {number} */ (index) >= /** @type {number} */ (startPattern) && (row[0] & 2) === 2) ||
+        // Or the last pattern in the cartridge
+        index === musicData.length - 1));
+
+  // Calculate the loop start time and the song length.
+  let loopStart = 0;
+  let songLength = 0;
+  for (let pattern = startPattern; pattern <= endPattern; pattern++) {
+    const musicRow = musicData[pattern];
+    const noteLength = sfxData[musicRow[0]][0] / BASE_SPEED;
+    if ((musicRow[0] & 1) === 1) {
+      loopStart = songLength;
+    }
+    songLength += 32 * noteLength;
+  }
+
   const frameCount = SAMPLE_RATE * songLength;
   const audioBuffer = audioCtx.createBuffer(1, frameCount, SAMPLE_RATE);
   const data = audioBuffer.getChannelData(0);
   let offset = 0;
-  for (let patternIndex = 0; patternIndex < musicData.length; patternIndex++) {
-    const musicRow = musicData[patternIndex];
+  for (let pattern = startPattern; pattern <= endPattern; pattern++) {
+    const musicRow = musicData[pattern];
     const noteLength = sfxData[musicRow[0]][0] / BASE_SPEED;
     const patternSamples = Math.round(32 * noteLength * SAMPLE_RATE);
     for (let channel = 0; channel < musicRow.length; channel++) {
@@ -268,7 +298,7 @@ const buildSong = (song) => {
       if (sfxIndex < sfxData.length) {
         // TODO: Note length can vary across channels
         // If one channel is faster, need to repeat for duration of the longest channel...
-        buildSound(song, data, offset, offset + patternSamples, sfxIndex);
+        buildSound(sfxData, data, offset, offset + patternSamples, sfxIndex);
       }
     }
     offset += patternSamples;
@@ -277,32 +307,12 @@ const buildSong = (song) => {
   const source = audioCtx.createBufferSource();
   source.buffer = audioBuffer;
   source.loop = true;
-  source.loopStart = /** @const {number} */ (song[1]);
+  source.loopStart = loopStart;
   source.connect(audioCtx.destination);
   source.start();
   return source;
 };
 
-let currSource = null;
-
-/**
- * Plays a song.
- * @param {!Song} song
- */
-const play = (song) => {
-  stop();
-  currSource = buildSong(song);
+window['pico8'] = {
+  'music': playMusic,
 };
-
-/**
- * Stops a song if currently playing.
- */
-const stop = () => {
-  if (currSource) {
-    currSource.stop();
-    currSource = null;
-  }
-};
-
-window['play'] = play;
-window['stop'] = stop;

@@ -87,14 +87,24 @@ const getSection = (contents, sectionName) => {
  * @param {!Array.<!Array.<number>>} musicInput
  * @param {number} startPattern
  * @param {string} name
+ * @param {boolean} everything
  */
-const convertSong = (sfxInput, musicInput, startPattern, name) => {
+const convertSong = (sfxInput, musicInput, startPattern, name, everything) => {
+  const sfxOutput = [];
+  const musicOutput = [];
+
   // number->number map
   // key is the original sfx index
   // value is the output sfx index
   const sfxIndexMap = {};
-  const sfxOutput = [];
-  const musicOutput = [];
+  if (everything) {
+    // If keeping everything, then the sfxIndexMap is just 1:1
+    for (let i = 0; i < sfxInput.length; i++) {
+      sfxIndexMap[i] = i;
+      sfxOutput.push(sfxInput[i]);
+    }
+  }
+
   let songLength = 0;
   let loopStartTime = 0;
   let endPattern = musicInput.length - 1;
@@ -138,7 +148,7 @@ const convertSong = (sfxInput, musicInput, startPattern, name) => {
       if (sfxOutputIndex === undefined) {
         sfxOutputIndex = sfxOutput.length;
         sfxIndexMap[sfxInputIndex] = sfxOutputIndex;
-        sfxOutput.push([...sfxInputRow]);
+        sfxOutput.push(sfxInputRow);
       }
 
       if (timePattern) {
@@ -150,15 +160,15 @@ const convertSong = (sfxInput, musicInput, startPattern, name) => {
       }
     }
     musicOutput.push(musicOutputRow);
-    if ((flags & 2) === 2) {
+
+    if (!everything && (flags & 2) === 2) {
+      // Found the end pattern
       endPattern = patternIndex;
       break;
     }
   }
 
   const result = [
-    Math.ceil(songLength * 1000) / 1000, // Round up to nearest thousandths of a second
-    Math.ceil(loopStartTime * 1000) / 1000, // Round up to nearest thousandths of a second
     sfxOutput,
     musicOutput,
   ];
@@ -169,31 +179,42 @@ const convertSong = (sfxInput, musicInput, startPattern, name) => {
 /**
  * Converts
  * @param {string} p8file The .p8 filename.
+ * @param {boolean} everything Flag to keep the entire cartridge.
  */
-const convertP8 = (p8file) => {
+const convertP8 = (p8file, everything) => {
   const contents = readFile(p8file);
   const sfxStr = getSection(contents, 'sfx');
   const musicStr = getSection(contents, 'music');
   const sfxInput = sfxStr.split('\n').map(parseSfxLine);
   const musicInput = musicStr.split('\n').map(parseMusicLine);
   const baseName = getBaseName(p8file);
-  let track = 1;
-  for (let pattern = 0; pattern < musicInput.length; pattern++) {
-    if (pattern === 0) {
-      convertSong(sfxInput, musicInput, pattern, `${baseName}_${track++}`);
-    }
-    const flags = musicInput[pattern][0];
-    if ((flags & 2) === 2 && pattern + 1 < musicInput.length) {
-      convertSong(sfxInput, musicInput, pattern + 1, `${baseName}_${track++}`);
+
+  if (everything) {
+    convertSong(sfxInput, musicInput, 0, baseName, true);
+  } else {
+    let track = 1;
+    for (let pattern = 0; pattern < musicInput.length; pattern++) {
+      if (pattern === 0) {
+        convertSong(sfxInput, musicInput, pattern, `${baseName}_${track++}`, false);
+      }
+      const flags = musicInput[pattern][0];
+      if ((flags & 2) === 2 && pattern + 1 < musicInput.length) {
+        convertSong(sfxInput, musicInput, pattern + 1, `${baseName}_${track++}`, false);
+      }
     }
   }
 };
 
 if (require.main === module) {
-  if (process.argv.length !== 3) {
-    console.log('Usage: node convert.js [myfile.p8]');
-    console.log('Example: node convert.js tunes1.p8');
+  const argc = process.argv.length;
+  if (argc !== 3 && argc !== 4) {
+    console.log('Usage: node convert.js source.p8 [song]');
+    console.log('Examples:');
+    console.log('Convert entire cartridge:  node convert.js tunes1.p8');
+    console.log('Convert single song:       node convert.js tunes1.p8 0');
+    console.log('Cartridge must be in .p8 format.  The .p8.png format is not supported');
+    console.log('Optional [song] parameter is the "n" pattern number.');
     return;
   }
-  convertP8(process.argv[2]);
+  convertP8(process.argv[2], argc === 3);
 }

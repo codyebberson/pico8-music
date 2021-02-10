@@ -4,12 +4,11 @@ let currMusic = null;
 
 /**
  * Plays music.
- * @param {!Cartridge} cartridge The PICO-8 cartridge data.
  * @param {number} n The music pattern.
  */
-function play(cartridge, n) {
+function play(n) {
   stop();
-  currMusic = pico8.music(cartridge, n);
+  currMusic = pico8.music(n);
 }
 
 /**

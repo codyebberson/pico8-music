@@ -1,25 +1,3 @@
-
-/**
- * Sound effects data definition.
- * @typedef {!Array.<!Array.<number>>}
- */
-const SfxData = {};
-
-/**
- * Sound effects data definition.
- * @typedef {!Array.<!Array.<number>>}
- */
-const MusicData = {};
-
-/**
- * Cartridge data definition.
- * Tuple with expected elements:
- *   0: {!SfxData} sfx data
- *   1: {!MusicData} music data
- * @typedef {!Array.<!SfxData|!MusicData>}
- */
-const Cartridge = {};
-
 const FX_NO_EFFECT = 0;
 const FX_SLIDE = 1;
 const FX_VIBRATO = 2;
@@ -28,13 +6,33 @@ const FX_FADE_IN = 4;
 const FX_FADE_OUT = 5;
 const FX_ARP_FAST = 6;
 const FX_ARP_SLOW = 7;
-
 const SAMPLE_RATE = 44100;
-
 const BASE_SPEED = 120;
 
+/**
+ * Global audio context.
+ * Using a global will create a warning in Chrome, but appears to be fine.
+ * @const {!AudioContext}
+ */
 const audioCtx = new AudioContext();
+
+/**
+ * Previous brown noise.
+ * Need to track this to trim frequency ranges.
+ * See the noise oscillator.
+ * @type {number}
+ */
 let prevNoise = 0;
+
+/**
+ * Parses a hex substring into a decimal number.
+ * @param {string} str
+ * @param {number} start
+ * @param {number} len
+ * @return {number}
+ * @noinline
+ */
+const parseHex = (str, start, len) => parseInt(str.substr(start, len), 16);
 
 /**
  * Rounds a number.
@@ -150,16 +148,17 @@ const oscillators = [
 const getFreq = (pitch) => 65 * 2 ** (pitch / 12);
 
 /**
- * @param {!SfxData} sfxData
+ * @param {!Array.<string>} sfxData
  * @param {!Float32Array} data
  * @param {number} offset
  * @param {number} endOffset
  * @param {number} sfxIndex
  */
 const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
-  const sfxRow = /** @const {!Array.<number>} */ (sfxData[sfxIndex]);
-  const loopStart = sfxRow[1];
-  const loopEnd = sfxRow[2] || 32;
+  const sfxRow = sfxData[sfxIndex];
+  const noteLength = parseHex(sfxRow, 2, 2) / BASE_SPEED;
+  const loopStart = parseHex(sfxRow, 4, 2);
+  const loopEnd = parseHex(sfxRow, 6, 2) || 32;
 
   /**
    * Returns the next note index.
@@ -172,12 +171,12 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   /**
    * Returns a data element from the sfx row.
    * @param {number} index The note index. (0-32).
-   * @param {number} offset The element offset (0-3).
+   * @param {number} offset The element offset (0-4).
+   * @param {number} len The length in hex characters.
    * @return {number} The sfx value.
    */
-  const getSfx = (index, offset) => sfxRow[3 + index * 4 + offset];
+  const getSfx = (index, offset, len) => parseHex(sfxRow, 8 + index * 5 + offset, len);
 
-  const noteLength = sfxRow[0] / BASE_SPEED;
   let phi = 0;
   let i = 0;
 
@@ -194,17 +193,17 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   let currEffect;
 
   while (offset < endOffset) {
-    currNote = getSfx(i, 0);
+    currNote = getSfx(i, 0, 2);
     currFreq = getFreq(currNote);
-    currWaveform = getSfx(i, 1);
-    currVolume = getSfx(i, 2) / 8.0;
-    currEffect = getSfx(i, 3);
+    currWaveform = getSfx(i, 2, 1);
+    currVolume = getSfx(i, 3, 1) / 8.0;
+    currEffect = getSfx(i, 4, 1);
 
     const next = getNextIndex(i);
-    const nextNote = getSfx(next, 0);
-    const nextWaveform = getSfx(next, 1);
-    const nextVolume = getSfx(next, 2);
-    const nextEffect = getSfx(next, 3);
+    const nextNote = getSfx(next, 0, 2);
+    const nextWaveform = getSfx(next, 2, 1);
+    const nextVolume = getSfx(next, 3, 1);
+    const nextEffect = getSfx(next, 4, 1);
 
     let attack = 0.02;
     if (currEffect === FX_FADE_IN) {
@@ -270,7 +269,7 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
         // const n = (int)(m * 7.5 * offset / offsetPerSecond);
         // const arp_note = (note_id & ~3) | (n & 3);
         // freq = key_to_freq(sfx.notes[arp_note].key);
-        freq = getFreq(sfxRow[3 + i * 4]);
+        freq = currFreq;
       }
 
       phi += freq / SAMPLE_RATE;
@@ -288,54 +287,83 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
 
 /**
  * Builds and plays a song.
- * @param {!Cartridge} cartridge
  * @param {number=} startPattern
  * @return {!AudioBufferSourceNode}
  */
-const playMusic = (cartridge, startPattern = 0) => {
-  const sfxData = /** @const {!SfxData} */ (cartridge[0]);
-  const musicData = /** @const {!MusicData} */ (cartridge[1]);
+const playMusic = (startPattern = 0) => {
+  const sfxData = __sfx__.split('\n');
+  const musicData = __music__.split('\n');
 
-  // Find the end pattern
-  // The end pattern is either:
-  //   1) The first pattern after start with the "loop" flag set
-  //   2) Or the last pattern in the cartridge
-  const endPattern = /** @const {number} */ (musicData.findIndex(
-      (row, index) =>
-        // Looping pattern after start
-        (/** @type {number} */ (index) >= /** @type {number} */ (startPattern) && (row[0] & 2) === 2) ||
-        // Or the last pattern in the cartridge
-        index === musicData.length - 2)) + 1;
-
-  // Calculate the loop start time and the song length.
+  // Preprocess loop
+  // Need to do 4 things on this loop:
+  // 1) Find the "time" channels
+  //    Channels can run at different speeds, and therefore have different lengths
+  //    The length of a pattern is defined by the first non-looping channel
+  //    See: https://www.lexaloffle.com/bbs/?pid=12781
+  // 2) Calculate the pattern lengths
+  //    After we know the time channel, we can convert that into number of samples
+  // 3) Find the loop start time (if one exists)
+  //    Find the pattern with the "start loop" flag set
+  //    Otherwise default to beginning of the song
+  // 4) Find the end pattern and total song length
+  //    Find the pattern with the "end loop" flag set
+  //    Otherwise default to end of the song
+  const timeChannels = [];
+  const patternSamples = [];
   let loopStart = 0;
   let songLength = 0;
+  let endPattern = musicData.length - 1;
   for (let pattern = startPattern; pattern <= endPattern; pattern++) {
     const musicRow = musicData[pattern];
-    const noteLength = sfxData[musicRow[0]][0] / BASE_SPEED;
-    if ((musicRow[0] & 1) === 1) {
+    const flags = parseHex(musicRow, 0, 2);
+
+    timeChannels[pattern] = 0;
+    for (let channel = 0; channel < 4; channel++) {
+      const sfxIndex = parseHex(musicRow, 3 + channel * 2, 2);
+      if (sfxIndex < sfxData.length) {
+        const sfxRow = sfxData[sfxIndex];
+        const loopEnd = parseHex(sfxRow, 6, 2);
+        if (loopEnd === 0) {
+          timeChannels[pattern] = channel;
+          break;
+        }
+      }
+    }
+
+    const sfxIndex = parseHex(musicRow, 3 + timeChannels[pattern] * 2, 2);
+    const sfxRow = sfxData[sfxIndex];
+    const noteLength = parseHex(sfxRow, 2, 2) / BASE_SPEED;
+    patternSamples[pattern] = round(32 * noteLength * SAMPLE_RATE);
+
+    if ((flags & 1) === 1) {
       loopStart = songLength;
     }
+
     songLength += 32 * noteLength;
+
+    if ((flags & 2) === 2) {
+      endPattern = pattern;
+      break;
+    }
   }
 
+  // Now we have everything we need to build the song
   const frameCount = SAMPLE_RATE * songLength;
   const audioBuffer = audioCtx.createBuffer(1, frameCount, SAMPLE_RATE);
   const data = audioBuffer.getChannelData(0);
+
+  // Main music generator loop
   let offset = 0;
   for (let pattern = startPattern; pattern <= endPattern; pattern++) {
     const musicRow = musicData[pattern];
-    const noteLength = sfxData[musicRow[0]][0] / BASE_SPEED;
-    const patternSamples = round(32 * noteLength * SAMPLE_RATE);
-    for (let channel = 0; channel < musicRow.length; channel++) {
-      const sfxIndex = musicRow[channel];
+    const samples = patternSamples[pattern];
+    for (let channel = 0; channel < 4; channel++) {
+      const sfxIndex = parseHex(musicRow, 3 + channel * 2, 2);
       if (sfxIndex < sfxData.length) {
-        // TODO: Note length can vary across channels
-        // If one channel is faster, need to repeat for duration of the longest channel...
-        buildSound(sfxData, data, offset, offset + patternSamples, sfxIndex);
+        buildSound(sfxData, data, offset, offset + samples, sfxIndex);
       }
     }
-    offset += patternSamples;
+    offset += samples;
   }
 
   const source = audioCtx.createBufferSource();

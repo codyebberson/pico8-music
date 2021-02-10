@@ -150,6 +150,15 @@ const getNote = (pitch) => 65.4 * 2 ** (pitch / 12);
  */
 const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   const sfxRow = /** @const {!Array.<number>} */ (sfxData[sfxIndex]);
+
+  /**
+   * Returns a data element from the sfx row.
+   * @param {number} index The note index. (0-32).
+   * @param {number} offset The element offset (0-3).
+   * @return {number} The sfx value.
+   */
+  const getSfx = (index, offset) => sfxRow[3 + index * 4 + offset];
+
   const noteLength = sfxRow[0] / BASE_SPEED;
   const loopEnd = sfxRow[2] || 32;
   let phi = 0;
@@ -168,17 +177,17 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   let currEffect;
 
   while (offset < endOffset) {
-    currNote = sfxRow[3 + i * 4];
+    currNote = getSfx(i, 0);
     currFreq = getNote(currNote);
-    currWaveform = sfxRow[3 + i * 4 + 1];
-    currVolume = sfxRow[3 + i * 4 + 2] / 8.0;
-    currEffect = sfxRow[3 + i * 4 + 3];
+    currWaveform = getSfx(i, 1);
+    currVolume = getSfx(i, 2) / 8.0;
+    currEffect = getSfx(i, 3);
 
     const next = (i + 1) % loopEnd;
-    const nextNote = sfxRow[3 + next * 4];
-    const nextWaveform = sfxRow[3 + next * 4 + 1];
-    const nextVolume = sfxRow[3 + next * 4 + 2] / 8.0;
-    const nextEffect = sfxRow[3 + next * 4 + 3];
+    const nextNote = getSfx(next, 0);
+    const nextWaveform = getSfx(next, 1);
+    const nextVolume = getSfx(next, 2);
+    const nextEffect = getSfx(next, 3);
 
     let attack = 0.02;
     if (currEffect === FX_FADE_IN) {

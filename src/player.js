@@ -37,6 +37,15 @@ const audioCtx = new AudioContext();
 let prevNoise = 0;
 
 /**
+ * Rounds a number.
+ * This compresses better than Math.round.
+ * Google Closure Compiler inlines the calls.
+ * @param {number} x Input number.
+ * @return {number} Output number.
+ */
+const round = (x) => (x + 0.5) | 0;
+
+/**
  * Triangle oscillator.
  * @param {number} t
  * @return {number}
@@ -110,7 +119,6 @@ const noiseOscillator = () => {
 const phaserOscillator = (t, value) => {
   // This one has a subfrequency of freq/128 that appears
   // to modulate two signals using a triangle wave
-  // FIXME: amplitude seems to be affected, too
   const k = Math.abs(2.0 * ((value / 128.0) % 1.0) - 1.0);
   const u = (t + 0.5 * k) % 1.0;
   const ret = Math.abs(4.0 * u - 2.0) - Math.abs(8.0 * t - 4.0);
@@ -209,8 +217,7 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
       release = 0;
     }
 
-    // const samples = (noteLength * SAMPLE_RATE) | 0;
-    const samples = Math.round(noteLength * SAMPLE_RATE);
+    const samples = round(noteLength * SAMPLE_RATE);
     for (let j = offset; j < offset + samples; j++) {
       // Note factor is the percentage of completion of the note
       // 0.0 is the beginning
@@ -312,7 +319,7 @@ const playMusic = (cartridge, startPattern = 0) => {
   for (let pattern = startPattern; pattern <= endPattern; pattern++) {
     const musicRow = musicData[pattern];
     const noteLength = sfxData[musicRow[0]][0] / BASE_SPEED;
-    const patternSamples = Math.round(32 * noteLength * SAMPLE_RATE);
+    const patternSamples = round(32 * noteLength * SAMPLE_RATE);
     for (let channel = 0; channel < musicRow.length; channel++) {
       const sfxIndex = musicRow[channel];
       if (sfxIndex < sfxData.length) {

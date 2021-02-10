@@ -12,7 +12,8 @@
     },
     "ignorePatterns": [
         "dist/**/*.js",
-        "examples/*.js"
+        "examples/*.js",
+        "test/**/*.js"
     ],
     "rules": {
         "max-len": ["error", {"code": 120}],

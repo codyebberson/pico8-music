@@ -85,7 +85,7 @@ const squareOscillator = (t) => t < 0.5 ? 0.5 : -0.5;
  * @param {number} t
  * @return {number}
  */
-const pulseOscillator = (t) => t < 0.2 ? 0.5 : -0.5;
+const pulseOscillator = (t) => t < 0.3 ? 0.5 : -0.5;
 
 /**
  * Organ oscillator.
@@ -147,7 +147,7 @@ const oscillators = [
  * @param {number} pitch
  * @return {number}
  */
-const getNote = (pitch) => 65 * 2 ** (pitch / 12);
+const getFreq = (pitch) => 65 * 2 ** (pitch / 12);
 
 /**
  * @param {!SfxData} sfxData
@@ -158,6 +158,16 @@ const getNote = (pitch) => 65 * 2 ** (pitch / 12);
  */
 const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   const sfxRow = /** @const {!Array.<number>} */ (sfxData[sfxIndex]);
+  const loopStart = sfxRow[1];
+  const loopEnd = sfxRow[2] || 32;
+
+  /**
+   * Returns the next note index.
+   * Handles loop start/end.
+   * @param {number} i The current note index.
+   * @return {number} The next note index.
+   */
+  const getNextIndex = (i) => i + 1 >= loopEnd ? loopStart : i + 1;
 
   /**
    * Returns a data element from the sfx row.
@@ -168,7 +178,6 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   const getSfx = (index, offset) => sfxRow[3 + index * 4 + offset];
 
   const noteLength = sfxRow[0] / BASE_SPEED;
-  const loopEnd = sfxRow[2] || 32;
   let phi = 0;
   let i = 0;
 
@@ -186,12 +195,12 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
 
   while (offset < endOffset) {
     currNote = getSfx(i, 0);
-    currFreq = getNote(currNote);
+    currFreq = getFreq(currNote);
     currWaveform = getSfx(i, 1);
     currVolume = getSfx(i, 2) / 8.0;
     currEffect = getSfx(i, 3);
 
-    const next = (i + 1) % loopEnd;
+    const next = getNextIndex(i);
     const nextNote = getSfx(next, 0);
     const nextWaveform = getSfx(next, 1);
     const nextVolume = getSfx(next, 2);
@@ -261,7 +270,7 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
         // const n = (int)(m * 7.5 * offset / offsetPerSecond);
         // const arp_note = (note_id & ~3) | (n & 3);
         // freq = key_to_freq(sfx.notes[arp_note].key);
-        freq = getNote(sfxRow[3 + i * 4]);
+        freq = getFreq(sfxRow[3 + i * 4]);
       }
 
       phi += freq / SAMPLE_RATE;
@@ -273,9 +282,7 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
     prevWaveform = currWaveform;
     prevVolume = currVolume;
     prevEffect = currEffect;
-
-    // TODO: Use loop end, not 32
-    i = (i + 1) % 32;
+    i = getNextIndex(i);
   }
 };
 

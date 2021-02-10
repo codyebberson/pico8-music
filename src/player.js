@@ -69,7 +69,7 @@ const tiltedSawOscillator = (t) => {
  * @param {number} t
  * @return {number}
  */
-const sawOscillator = (t) => 0.653 * (t < 0.5 ? t : t - 1.0);
+const sawOscillator = (t) => 0.6 * (t < 0.5 ? t : t - 1.0);
 
 /**
  * Square oscillator.
@@ -85,7 +85,7 @@ const squareOscillator = (t) => t < 0.5 ? 0.5 : -0.5;
  * @param {number} t
  * @return {number}
  */
-const pulseOscillator = (t) => t < 0.333 ? 0.5 : -0.5;
+const pulseOscillator = (t) => t < 0.2 ? 0.5 : -0.5;
 
 /**
  * Organ oscillator.
@@ -147,7 +147,7 @@ const oscillators = [
  * @param {number} pitch
  * @return {number}
  */
-const getNote = (pitch) => 65.4 * 2 ** (pitch / 12);
+const getNote = (pitch) => 65 * 2 ** (pitch / 12);
 
 /**
  * @param {!SfxData} sfxData

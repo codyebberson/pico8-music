@@ -151,41 +151,49 @@ const getNote = (pitch) => 65.4 * 2 ** (pitch / 12);
 const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
   const sfxRow = /** @const {!Array.<number>} */ (sfxData[sfxIndex]);
   const noteLength = sfxRow[0] / BASE_SPEED;
+  const loopEnd = sfxRow[2] || 32;
   let phi = 0;
   let i = 0;
 
+  let prevNote = -1;
+  let prevFreq = -1;
+  let prevWaveform = -1;
+  let prevVolume = -1;
+  let prevEffect = -1;
+
+  let currNote;
+  let currFreq;
+  let currWaveform;
+  let currVolume;
+  let currEffect;
+
   while (offset < endOffset) {
-    const prevNote = i == 0 ? -1 : sfxRow[3 + (i - 1) * 4];
-    const prevFreq = getNote(prevNote);
-    const prevWaveform = i == 0 ? -1 : sfxRow[3 + (i - 1) * 4 + 1];
-    const prevVolume = i == 0 ? -1 : sfxRow[3 + (i - 1) * 4 + 2] / 8.0;
-    const prevEffect = i == 0 ? -1 : sfxRow[3 + (i - 1) * 4 + 3];
+    currNote = sfxRow[3 + i * 4];
+    currFreq = getNote(currNote);
+    currWaveform = sfxRow[3 + i * 4 + 1];
+    currVolume = sfxRow[3 + i * 4 + 2] / 8.0;
+    currEffect = sfxRow[3 + i * 4 + 3];
 
-    const currNote = sfxRow[3 + i * 4];
-    const noteFreq = getNote(sfxRow[3 + i * 4]);
-    const waveForm = sfxRow[3 + i * 4 + 1] % oscillators.length;
-    const noteVolume = sfxRow[3 + i * 4 + 2] / 8.0;
-    const effect = sfxRow[3 + i * 4 + 3];
+    const next = (i + 1) % loopEnd;
+    const nextNote = sfxRow[3 + next * 4];
+    const nextWaveform = sfxRow[3 + next * 4 + 1];
+    const nextVolume = sfxRow[3 + next * 4 + 2] / 8.0;
+    const nextEffect = sfxRow[3 + next * 4 + 3];
 
-    const nextNote = i == 31 ? -1 : sfxRow[3 + (i + 1) * 4];
-    const nextWaveform = i == 31 ? -1 : sfxRow[3 + (i + 1) * 4 + 1];
-    const nextVolume = i == 31 ? -1 : sfxRow[3 + (i + 1) * 4 + 2] / 8.0;
-    const nextEffect = i == 31 ? -1 : sfxRow[3 + (i + 1) * 4 + 3];
-
-    let attack = 0.01;
-    if (effect === FX_FADE_IN) {
+    let attack = 0.02;
+    if (currEffect === FX_FADE_IN) {
       attack = 0;
-    } else if (waveForm === prevWaveform &&
-      (currNote === prevNote || effect === FX_SLIDE) &&
+    } else if (currWaveform === prevWaveform &&
+      (currNote === prevNote || currEffect === FX_SLIDE) &&
       prevVolume > 0 &&
       prevEffect !== FX_FADE_OUT) {
       attack = 0;
     }
     let release = 0.05;
-    if (effect === FX_FADE_OUT) {
+    if (currEffect === FX_FADE_OUT) {
       release = 0;
     } else if (
-      waveForm === nextWaveform &&
+      currWaveform === nextWaveform &&
       (currNote === nextNote || nextEffect === FX_SLIDE) &&
       nextVolume > 0 &&
       nextEffect !== FX_FADE_IN) {
@@ -207,28 +215,28 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
         envelope = (1.0 - noteFactor) / release;
       }
 
-      let freq = noteFreq;
-      let volume = noteVolume;
+      let freq = currFreq;
+      let volume = currVolume;
 
-      if (effect === FX_SLIDE) {
-        freq = (1 - noteFactor) * prevFreq + noteFactor * noteFreq;
+      if (currEffect === FX_SLIDE) {
+        freq = (1 - noteFactor) * prevFreq + noteFactor * currFreq;
         if (prevVolume > 0) {
-          volume = (1 - noteFactor) * prevVolume + noteFactor * noteVolume;
+          volume = (1 - noteFactor) * prevVolume + noteFactor * currVolume;
         }
       }
-      if (effect === FX_VIBRATO) {
+      if (currEffect === FX_VIBRATO) {
         freq *= 1.0 + 0.02 * Math.sin(7.5 * noteFactor);
       }
-      if (effect === FX_DROP) {
+      if (currEffect === FX_DROP) {
         freq *= 1.0 - noteFactor;
       }
-      if (effect === FX_FADE_IN) {
+      if (currEffect === FX_FADE_IN) {
         volume *= noteFactor;
       }
-      if (effect === FX_FADE_OUT) {
+      if (currEffect === FX_FADE_OUT) {
         volume *= 1.0 - noteFactor;
       }
-      if (effect >= FX_ARP_FAST) {
+      if (currEffect >= FX_ARP_FAST) {
         // From the documentation:
         //   6 arpeggio fast  //  Iterate over groups of 4 notes at speed of 4
         //   7 arpeggio slow  //  Iterate over groups of 4 notes at speed of 8
@@ -241,11 +249,14 @@ const buildSound = (sfxData, data, offset, endOffset, sfxIndex) => {
       }
 
       phi += freq / SAMPLE_RATE;
-      data[j] += volume * envelope * oscillators[waveForm](phi % 1, phi);
+      data[j] += volume * envelope * oscillators[currWaveform](phi % 1, phi);
     }
     offset += samples;
-    // prevFreq = noteFreq;
-    // prevVolume = noteVolume;
+    prevNote = currNote;
+    prevFreq = currFreq;
+    prevWaveform = currWaveform;
+    prevVolume = currVolume;
+    prevEffect = currEffect;
 
     // TODO: Use loop end, not 32
     i = (i + 1) % 32;
@@ -271,7 +282,7 @@ const playMusic = (cartridge, startPattern = 0) => {
         // Looping pattern after start
         (/** @type {number} */ (index) >= /** @type {number} */ (startPattern) && (row[0] & 2) === 2) ||
         // Or the last pattern in the cartridge
-        index === musicData.length - 1));
+        index === musicData.length - 2)) + 1;
 
   // Calculate the loop start time and the song length.
   let loopStart = 0;

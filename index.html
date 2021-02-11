@@ -59,22 +59,21 @@
       width: 200px;
       height: 25px;
     }
-
-    .bad {
-      color: red;
-      text-decoration: line-through;
-    }
   </style>
 </head>
 
 <body>
   <div class="container">
     <h1>PICO-8 JavaScript Music Player</h1>
-    <p>A tiny JavaScript library that generates music from <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a> cartridges.</p>
+    <p>A tiny JavaScript library that generates music from <a href="https://www.lexaloffle.com/pico-8.php">PICO-8</a>
+      cartridges.</p>
     <h2>Features</h2>
     <ul>
       <li>Play PICO-8 sound effects and music</li>
-      <li>Player JavaScript a tiny 1740 bytes (1134 bytes zipped)</li>
+      <li>Super tiny 1740 bytes (1134 bytes zipped)</li>
+      <li>Custom instruments! Introduced in 0.1.11, see <a
+        href="https://twitter.com/lexaloffle/status/914533528091508736?s=20">tweet</a>
+    </li>
     </ul>
     <h2>Instructions</h2>
     <p>1. Grab the source here:</p>
@@ -103,8 +102,7 @@
     </blockquote>
     <h2>Examples</h2>
     <p>
-      Demo songs from <a href="https://www.lexaloffle.com/bbs/?tid=29008">Pico-8 Tunes Volume 1</a>
-      by <a href="https://twitter.com/gruber_music">Gruber</a>.
+      Demo songs by <a href="https://twitter.com/gruber_music">Gruber</a>.
     </p>
     <table>
       <thead>
@@ -119,12 +117,15 @@
       </thead>
       <tbody>
         <tr>
+          <td colspan="6"><a href="https://www.lexaloffle.com/bbs/?tid=29008">Pico-8 Tunes Volume 1</a></td>
+        </tr>
+        <tr>
           <td>1. Demented Mario</td>
           <td>24.0</td>
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(0);">Play</button>
+            <button onclick="play(tunes1, 0);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -139,7 +140,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(6);">Play</button>
+            <button onclick="play(tunes1, 6);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -154,7 +155,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(14);">Play</button>
+            <button onclick="play(tunes1, 14);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -169,7 +170,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(18);">Play</button>
+            <button onclick="play(tunes1, 18);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -184,7 +185,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(24);">Play</button>
+            <button onclick="play(tunes1, 24);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -199,7 +200,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(30);">Play</button>
+            <button onclick="play(tunes1, 30);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -214,7 +215,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(36);">Play</button>
+            <button onclick="play(tunes1, 36);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -229,7 +230,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(42);">Play</button>
+            <button onclick="play(tunes1, 42);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -244,7 +245,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(46);">Play</button>
+            <button onclick="play(tunes1, 46);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -259,7 +260,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(48);">Play</button>
+            <button onclick="play(tunes1, 48);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -274,7 +275,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(55);">Play</button>
+            <button onclick="play(tunes1, 55);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -289,7 +290,7 @@
           <td></td>
           <td></td>
           <td>
-            <button onclick="play(59);">Play</button>
+            <button onclick="play(tunes1, 59);">Play</button>
             <button onclick="stop();">Stop</button>
           </td>
           <td>
@@ -298,13 +299,165 @@
             </audio>
           </td>
         </tr>
+        <tr>
+          <td colspan="6"><a href="https://www.lexaloffle.com/bbs/?pid=62911">Pico-8 Tunes Volume 2</a></td>
+        </tr>
+        <tr>
+          <td>1. Into the Belt</td>
+          <td>26.1</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 6);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_into_the_belt.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>2. Need for Speed</td>
+          <td>28.8</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 56);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_need_for_speed.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>3. Like Clockwork</td>
+          <td>12.8</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 21);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_like_clockwork.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>4. Morning Shower</td>
+          <td>32.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 0);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_morning_shower.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>5. Robot Dance</td>
+          <td>36.3</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 31);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_robot_dance.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>6. Eyes in the Dark</td>
+          <td>51.2</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 43);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_eyes_in_the_dark.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>7. Flight of Icarus</td>
+          <td>17.6</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 49);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_flight_of_icarus.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>8. Fickle Flame</td>
+          <td>21.3</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 40);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_fickle_flame.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>9. Autumn Wind</td>
+          <td>32.0</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 39);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_autumn_wind.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
+        <tr>
+          <td>10. Dimensional Gate</td>
+          <td>27.7</td>
+          <td></td>
+          <td></td>
+          <td>
+            <button onclick="play(tunes2, 13);">Play</button>
+            <button onclick="stop();">Stop</button>
+          </td>
+          <td>
+            <audio controls preload="none">
+              <source src="originals/tunes2_dimensional_gate.mp3" type="audio/mp3">
+            </audio>
+          </td>
+        </tr>
       </tbody>
     </table>
     <h2>Known issues</h2>
     <ul>
-      <li>"Instrument editor" (custom instruments) not implemented. (Introduced in 0.1.11, see <a href="https://twitter.com/lexaloffle/status/914533528091508736?s=20">tweet</a>)
-      </li>
       <li>Arpeggio not implemented.</li>
+      <li>Custom instruments are slow to generate.  This is a one-time performance hit at startup.</li>
       <li>Smooth transitions across instruments (When instrument changes, an attack/release envelope is applied. Some
         instruments appear to be compatible, and the envelope should *not* be applied. You can hear this in
         "Nostalgia".)</li>
@@ -345,6 +498,7 @@
   <script src="src/player.js"></script>
 
   <script src="examples/tunes1.js"></script>
+  <script src="examples/tunes2.js"></script>
   <script src="examples/demo.js"></script>
 </body>
 

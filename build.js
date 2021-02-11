@@ -18,7 +18,6 @@ function compile() {
       strict_mode_input: true,
       warning_level: 'VERBOSE',
       summary_detail_level: 3,
-      externs: 'src/externs.js',
       jscomp_error: '*',
       jscomp_off: [
         'missingRequire',
